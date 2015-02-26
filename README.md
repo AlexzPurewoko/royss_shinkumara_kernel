@@ -1,15 +1,27 @@
-Patching use interdiff
+Patch using interdiff:
 
-    interdiff -z patch-3.4.105 patch-3.4.106 | patch -p1
+        interdiff -z patch-3.4.105 patch-3.4.106 | patch -p1
  
-Build command
 
-    ./make_kernel.sh
- 
-Clean Source
+Build command:
 
-    make clean
+-create file make_kernel.sh
+
+-write in that file
+        make <your config>
+        make -j<number of your computer cores>
+
+-command
+
+        ./make_kernel.sh
  
+
 Modules
 
-    find . -name '*ko' -exec cp '{}' modules \;
+        mkdir -p modules
+        find . -name '*ko' -exec cp '{}' modules \;
+
+
+Clean Source
+
+        make clean
