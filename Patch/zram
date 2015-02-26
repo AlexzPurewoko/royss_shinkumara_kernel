@@ -1,0 +1,152 @@
+So on my system LZ4 is slower in write-only tests, while it performs
+better in read-only and mixed (reads + writes) tests.
+
+Official LZ4 benchmarks available here http://code.google.com/p/lz4/
+(linux kernel uses revision r90).
+
+Signed-off-by: Sergey Senozhatsky <sergey.senozhatsky@gmail.com>
+---
+ drivers/staging/zram/Kconfig     | 10 +++++++++
+ drivers/staging/zram/Makefile    |  2 ++
+ drivers/staging/zram/zcomp.c     |  6 ++++++
+ drivers/staging/zram/zcomp_lz4.c | 47 ++++++++++++++++++++++++++++++++++++++++++
+ drivers/staging/zram/zcomp_lz4.h | 17 +++++++++++++++
+ 5 files changed, 82 insertions(+)
+ create mode 100644 drivers/staging/zram/zcomp_lz4.c
+ create mode 100644 drivers/staging/zram/zcomp_lz4.h
+diff --git a/drivers/staging/zram/Kconfig b/drivers/staging/zram/Kconfig
+index 3450be8..6489c0f 100644
+--- a/drivers/staging/zram/Kconfig
++++ b/drivers/staging/zram/Kconfig
+@@ -15,6 +15,16 @@ config ZRAM
+ 
+ 	  See zram.txt for more information.
+ 
++config ZRAM_LZ4_COMPRESS
++	bool "Enable LZ4 algorithm support"
++	depends on ZRAM
++	select LZ4_COMPRESS
++	select LZ4_DECOMPRESS
++	default n
++	help
++	  This option enables LZ4 compression algorithm support. Compression
++	  algorithm can be changed using `comp_algorithm' device attribute.
++
+ config ZRAM_DEBUG
+ 	bool "Compressed RAM staging device debug support"
+ 	depends on ZRAM
+diff --git a/drivers/staging/zram/Makefile b/drivers/staging/zram/Makefile
+index 757c6a5..be0763f 100644
+--- a/drivers/staging/zram/Makefile
++++ b/drivers/staging/zram/Makefile
+@@ -1,3 +1,5 @@
+ zram-y	:=	zcomp_lzo.o zcomp.o zram_drv.o
+ 
++zram-$(CONFIG_ZRAM_LZ4_COMPRESS) += zcomp_lz4.o
++
+ obj-$(CONFIG_ZRAM)	+=	zram.o
+diff --git a/drivers/staging/zram/zcomp.c b/drivers/staging/zram/zcomp.c
+index aad533a..d591903 100644
+--- a/drivers/staging/zram/zcomp.c
++++ b/drivers/staging/zram/zcomp.c
+@@ -15,6 +15,9 @@
+ 
+ #include "zcomp.h"
+ #include "zcomp_lzo.h"
++#ifdef CONFIG_ZRAM_LZ4_COMPRESS
++#include "zcomp_lz4.h"
++#endif
+ 
+ /*
+  * single zcomp_strm backend
+@@ -41,6 +44,9 @@ struct zcomp_strm_multi {
+ 
+ static struct zcomp_backend *backends[] = {
+ 	&zcomp_lzo,
++#ifdef CONFIG_ZRAM_LZ4_COMPRESS
++	&zcomp_lz4,
++#endif
+ 	NULL
+ };
+ 
+diff --git a/drivers/staging/zram/zcomp_lz4.c b/drivers/staging/zram/zcomp_lz4.c
+new file mode 100644
+index 0000000..f2afb7e
+--- /dev/null
++++ b/drivers/staging/zram/zcomp_lz4.c
+@@ -0,0 +1,47 @@
++/*
++ * Copyright (C) 2014 Sergey Senozhatsky.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version
++ * 2 of the License, or (at your option) any later version.
++ */
++
++#include <linux/kernel.h>
++#include <linux/slab.h>
++#include <linux/lz4.h>
++
++#include "zcomp_lz4.h"
++
++static void *zcomp_lz4_create(void)
++{
++	return kzalloc(LZ4_MEM_COMPRESS, GFP_KERNEL);
++}
++
++static void zcomp_lz4_destroy(void *private)
++{
++	kfree(private);
++}
++
++static int zcomp_lz4_compress(const unsigned char *src, unsigned char *dst,
++		size_t *dst_len, void *private)
++{
++	/* return  : Success if return 0 */
++	return lz4_compress(src, PAGE_SIZE, dst, dst_len, private);
++}
++
++static int zcomp_lz4_decompress(const unsigned char *src, size_t src_len,
++		unsigned char *dst)
++{
++	size_t dst_len = PAGE_SIZE;
++	/* return  : Success if return 0 */
++	return lz4_decompress_unknownoutputsize(src, src_len, dst, &dst_len);
++}
++
++struct zcomp_backend zcomp_lz4 = {
++	.compress = zcomp_lz4_compress,
++	.decompress = zcomp_lz4_decompress,
++	.create = zcomp_lz4_create,
++	.destroy = zcomp_lz4_destroy,
++	.name = "lz4",
++};
+diff --git a/drivers/staging/zram/zcomp_lz4.h b/drivers/staging/zram/zcomp_lz4.h
+new file mode 100644
+index 0000000..60613fb
+--- /dev/null
++++ b/drivers/staging/zram/zcomp_lz4.h
+@@ -0,0 +1,17 @@
++/*
++ * Copyright (C) 2014 Sergey Senozhatsky.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version
++ * 2 of the License, or (at your option) any later version.
++ */
++
++#ifndef _ZCOMP_LZ4_H_
++#define _ZCOMP_LZ4_H_
++
++#include "zcomp.h"
++
++extern struct zcomp_backend zcomp_lz4;
++
++#endif /* _ZCOMP_LZ4_H_ */
+-- 
+1.9.0.359.g5e34a15
+
+
+	\
