@@ -8,6 +8,7 @@ Build command:
 -create file make_kernel.sh
 
 -write in that file
+
         make <your config>
         make -j<number of your computer cores>
 
