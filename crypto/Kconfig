@@ -943,6 +943,14 @@ config CRYPTO_LZO
 	help
 	  This is the LZO algorithm.
 
+config CRYPTO_LZ4
+	tristate "LZ4 compression algorithm"
+	select CRYPTO_ALGAPI
+	select LZ4_COMPRESS
+	select LZ4_DECOMPRESS
+	help
+	  This is the LZO algorithm.
+
 comment "Random Number Generation"
 
 config CRYPTO_ANSI_CPRNG
