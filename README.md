@@ -1,3 +1,7 @@
+First patch use:
+
+        patch -p1 < <your patch>
+
 Patch using interdiff:
 
         interdiff -z <your old patch> <your new patch> | patch -p1
@@ -5,12 +9,15 @@ Patch using interdiff:
 
 Build command:
 
--create file make_kernel.sh
+        echo make_kernel.sh
+        gedit make_kernel.sh
 
 -write in that file
 
         make <your config>
         make -j<number of your computer cpu cores>
+
+-save
 
 -command
 
