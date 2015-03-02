@@ -78,6 +78,11 @@ struct attribute_group {
 	.show	= _name##_show,					\
 }
 
+#define __ATTR_RW(_name) { \
+	.attr	= { .name = __stringify(_name), .mode = 0644 },	\
+	.show	= _name##_show,					\
+}
+
 #define __ATTR_NULL { .attr = { .name = NULL } }
 
 #define attr_name(_attr) (_attr).attr.name

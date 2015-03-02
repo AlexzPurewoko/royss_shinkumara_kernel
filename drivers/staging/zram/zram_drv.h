@@ -99,8 +99,18 @@ struct zram_slot_free {
 	struct zram_slot_free *next;
 };
 
+/* compression/decompression functions and algorithm-specific workmem size */
+struct zram_compress_ops {
+	int (*compress)(const unsigned char *src, size_t src_len,
+			unsigned char *dst, size_t *dst_len, void *wrkmem);
+	int (*decompress)(const unsigned char *src, size_t src_len,
+			unsigned char *dst, size_t *dst_len);
+	long workmem_sz;
+};
+
 struct zram {
 	struct zram_meta *meta;
+        struct zram_compress_ops *ops;
 	struct rw_semaphore lock; /* protect compression buffers, table,
 				   * 32bit stat counters against concurrent
 				   * notifications, reads and writes */
