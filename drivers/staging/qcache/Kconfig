@@ -1,8 +1,8 @@
 config QCACHE
 	tristate "Dynamic compression of clean pagecache pages"
 	depends on CLEANCACHE
-	select LZ4_COMPRESS
-	select LZ4_DECOMPRESS
+	select LZO_COMPRESS
+	select LZO_DECOMPRESS
 	default n
 	help
 	  Qcache is the backend for fmem
