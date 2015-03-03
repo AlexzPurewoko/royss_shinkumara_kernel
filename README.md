@@ -33,3 +33,4 @@ Modules
 Clean Source
 
         make clean
+        make mrproper
