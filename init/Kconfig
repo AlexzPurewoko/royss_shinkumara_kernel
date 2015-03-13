@@ -1466,6 +1466,7 @@ config PADATA
 
 #for factory APO concept
 config UES_APO_UART
+        bool
 	default n
 
 source "kernel/Kconfig.locks"
